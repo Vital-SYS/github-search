@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\SearchResult;
+use Illuminate\Support\Facades\Http;
 
 class ApiController extends Controller
 {
@@ -15,7 +15,7 @@ class ApiController extends Controller
         $searchResult = SearchResult::where('search_string', $searchString)->first();
 
         if (!$searchResult) {
-            // выполнение поиска на Github
+            $response = $this->searchRepositories($searchString);
 
             if ($response->successful()) {
                 $result = $response->json();
@@ -50,9 +50,16 @@ class ApiController extends Controller
         if ($searchResult) {
             $searchResult->delete();
 
-            return redirect()->back()->with('success', 'Результаты поиска успешно удалены.');
+            return response()->json(['message' => 'Результаты поиска успешно удалены.']);
         }
 
-        abort(404, 'Результаты поиска не найдены.');
+        return response()->json(['message' => 'Результаты поиска не найдены.'], 404);
+    }
+
+    private function searchRepositories($searchString)
+    {
+        return Http::get('https://api.github.com/search/repositories', [
+            'q' => $searchString
+        ]);
     }
 }

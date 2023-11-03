@@ -1,35 +1,29 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Результаты поиска</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-<div class="container mt-5">
+@extends('layout')
+
+@section('title', 'Результаты поиска')
+
+@section('content')
     <div class="row">
         <div class="col-md-12">
-            <h1>Результаты поиска:</h1>
-            <p>Запрос: {{ session('searchString') }}</p>
+            <h1 class="display-4">Результаты поиска:</h1>
+            <p class="lead">Запрос: {{ session('searchString') }}</p>
         </div>
     </div>
 
     @if ($searchResult)
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <form action="{{ route('deleteSearch', ['id' => $searchResult->id]) }}" method="POST">
+        <div class="row mt-4 d-flex justify-content-between">
+            <div class="col-md-6">
+                <a href="{{ route('index') }}" class="btn btn-outline-primary">Вернуться к поиску</a>
+            </div>
+            <div class="col-md-6 text-end">
+                <form action="{{ route('delete_search', ['id' => $searchResult->id]) }}" method="POST">
                     @csrf
                     @method('DELETE')
-                    <button class="btn btn-danger" type="submit">Сбросить результаты поиска</button>
+                    <button class="btn btn-outline-danger" type="submit">Сбросить результаты поиска</button>
                 </form>
             </div>
         </div>
     @endif
-
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <a href="{{ route('index') }}" class="btn btn-primary">Вернуться к поиску</a>
-        </div>
-    </div>
 
     <div class="row mt-4">
         @if ($results)
@@ -37,35 +31,50 @@
                 <div class="col-md-4 mb-4">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">{{ $result['name'] }}</h5>
-                            <p class="card-text">Автор: {{ $result['owner']['login'] }}</p>
-                            <p class="card-text">Кол-во звезд: {{ $result['stargazers_count'] }}</p>
-                            <p class="card-text">Кол-во просмотров: {{ $result['watchers_count'] }}</p>
-                            <a href="{{ $result['html_url'] }}" class="btn btn-primary">Перейти к проекту</a>
+                            <h5 class="card-title text-center">{{ $result['name'] }}</h5>
+                            <img src="{{ $result['owner']['avatar_url'] }}" alt="Avatar" class="avatar">
+                            <p class="author mb-2">{{ $result['owner']['login'] }}</p>
+                            <div class="star-watch">
+                                <p class="card-text">Кол-во звезд: {{ $result['stargazers_count'] }}</p>
+                                <p class="card-text mb-4">Кол-во наблюдателей: {{ $result['watchers_count'] }}</p>
+                            </div>
+                            <a href="{{ $result['html_url'] }}" class="btn btn-outline-primary btn-go-to-project">Перейти
+                                к проекту</a>
                         </div>
                     </div>
                 </div>
             @endforeach
         @else
             <div class="col-md-12">
-                <p>Результаты не найдены.</p>
+                <div class="alert alert-info" role="alert">Результаты не найдены.</div>
             </div>
         @endif
     </div>
 
     <div class="pagination mt-4 mb-4">
+        @if ($currentPage > 2)
+            <a class="btn btn-outline-primary me-3"
+               href="{{ route('results', ['page' => 1, 'searchString' => $searchString]) }}">В начало</a>
+        @endif
         @if ($currentPage > 1)
-            <a class="btn btn-primary"
-               href="{{ route('results', ['page' => $currentPage - 1, 'searchString' => $searchString]) }}">Назад</a>
+            <a class="btn btn-outline-primary"
+               href="{{ route('results', ['page' => $currentPage - 1, 'searchString' => $searchString]) }}"><- Назад</a>
         @endif
 
-        <span class="page-number m-auto">{{ $currentPage }}</span>
+        <div class="page-number m-auto">
+            Страница {{ $currentPage }} из {{ $totalPages }}
+        </div>
 
         @if ($currentPage < $totalPages)
-            <a class="btn btn-primary"
-               href="{{ route('results', ['page' => $currentPage + 1, 'searchString' => $searchString]) }}">Вперед</a>
+            <a class="btn btn-outline-primary"
+               href="{{ route('results', ['page' => $currentPage + 1, 'searchString' => $searchString]) }}">Вперед -></a>
+        @endif
+
+        @if ($currentPage < $totalPages - 1)
+            <a class="btn btn-outline-primary ms-3"
+               href="{{ route('results', ['page' => $totalPages, 'searchString' => $searchString]) }}">В конец</a>
         @endif
     </div>
-</div>
-</body>
-</html>
+
+
+@endsection

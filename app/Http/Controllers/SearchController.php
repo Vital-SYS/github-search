@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Models\SearchResult;
+use Illuminate\Support\Facades\Validator;
 
 class SearchController extends Controller
 {
@@ -15,30 +16,37 @@ class SearchController extends Controller
 
     public function search(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'search' => 'required|string|max:30',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
         $searchString = $request->input('search');
 
         $searchResult = SearchResult::where('search_string', $searchString)->first();
 
-        if (!$searchResult) {
-            $response = Http::get('https://api.github.com/search/repositories?q=' . $searchString);
+        $response = Http::get('https://api.github.com/search/repositories', [
+            'q' => $searchString
+        ]);
 
-            if ($response->successful()) {
-                $result = $response->json();
+        if ($response->successful()) {
+            $result = $response->json();
 
+            if (!$searchResult) {
                 SearchResult::create([
                     'search_string' => $searchString,
                     'result' => json_encode($result),
                 ]);
-
-                return redirect()->route('results', ['page' => 1, 'searchString' => $searchString])->with('searchString', $searchString);
-            } else {
-                return redirect()->back()->with('error', 'Не удалось выполнить поиск.');
             }
-        } else {
+
             return redirect()->route('results', ['page' => 1, 'searchString' => $searchString])->with('searchString', $searchString);
         }
-    }
 
+        return redirect()->back()->with('error', 'Не удалось выполнить поиск.');
+    }
 
     public function results(Request $request)
     {
@@ -72,5 +80,4 @@ class SearchController extends Controller
 
         return redirect()->route('index')->with('error', 'Результаты не найдены.');
     }
-
 }
